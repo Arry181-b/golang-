@@ -1,6 +1,11 @@
 package chain
 
-import "time"
+import (
+	"AnderChain/utils"
+	"bytes"
+	"crypto/sha256"
+	"time"
+)
 
 const VERSION = 0x00
 //区块的结构定义
@@ -16,6 +21,21 @@ type Block struct {
 	//区块体
 	Data []byte
 }
+
+/**
+ * 计算区块的hash值，并赋值
+ */
+func (block *Block) CalculateBlockHash() {
+	heightByte, _ := utils.Int2Byte(block.Height)
+	versionByte, _ := utils.Int2Byte(block.Version)
+	timeByte, _ := utils.Int2Byte(block.TimeStamp)
+	nonceByte, _ := utils.Int2Byte(block.Nonce)
+
+	blockByte := bytes.Join([] []byte{heightByte, versionByte,block.PrevHash[:],timeByte,nonceByte,block.Data}, []byte{})
+	//为区块的哈希字段赋值
+	block.Hash = sha256.Sum256(blockByte)
+}
+
 /**
  *生成创世区块的函数
  */
@@ -27,10 +47,11 @@ func CreateGenesis(data []byte) Block {
 			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 		TimeStamp: time.Now().Unix(),
 		Data:   data,
-
 		}
-		//todo 计算并设置nonce 计算并设置hash
 
+		//todo 计算并设置nonce 计算并设置hash
+		//计算病逝设置哈希值
+		genesis.CalculateBlockHash()
 		return genesis
 	}
 
@@ -46,5 +67,7 @@ func NewBlock(height int64, prev [32]byte, data []byte) Block{
 		Data:  data,
 	}
 	//todo 设置哈希,寻找并设置nonce
+	//设置区块哈希
+	newBlock.CalculateBlockHash()
 	return newBlock
 }
