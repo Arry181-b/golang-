@@ -2,6 +2,7 @@ package chain
 
 import (
 	"AnderChain/utils"
+	"AnderChain/consensus"
 	"bytes"
 	"crypto/sha256"
 	"time"
@@ -50,8 +51,12 @@ func CreateGenesis(data []byte) Block {
 		}
 
 		//todo 计算并设置nonce 计算并设置hash
-		//计算病逝设置哈希值
+		//计算并设置哈希值
 		genesis.CalculateBlockHash()
+
+		proof := consensus.	NewPow(genesis)
+		genesis.Nonce = proof.FindNonce()
+
 		return genesis
 	}
 
@@ -69,5 +74,7 @@ func NewBlock(height int64, prev [32]byte, data []byte) Block{
 	//todo 设置哈希,寻找并设置nonce
 	//设置区块哈希
 	newBlock.CalculateBlockHash()
+	proof := consensus.NewPow(newBlock)
+	newBlock.Nonce = proof.FindNonce()
 	return newBlock
 }
