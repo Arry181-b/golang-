@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"math/big"
 )
-const DIFFICULTY = 2 //难度值系数
+const DIFFICULTY = 10 //难度值系数
 
 //目的：拿到数据的熟悉值
 	//1.通过结构体引用，引用block结构体，热不过访问其熟悉，比如block.Height

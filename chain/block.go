@@ -2,6 +2,8 @@ package chain
 
 import (
 	"AnderChain/consensus"
+	"bytes"
+	"encoding/gob"
 	"time"
 )
 
@@ -55,6 +57,29 @@ func (block Block)GetData() []byte {
 //	//为区块的哈希字段赋值
 //	block.Hash = sha256.Sum256(blockByte)
 //}
+
+
+/**
+ * 区块的序列化方法
+ */
+func (block *Block) Serialize() ([]byte, error) {
+	//缓冲区
+	buff := new(bytes.Buffer)  //开辟一个缓冲区的内存空间
+	encoder := gob.NewEncoder(buff)
+	err := encoder.Encode(&block)
+	return buff.Bytes(), err
+}
+
+/**
+ * 反序列化函数
+ */
+func Deserialize(data []byte) (	Block, error) {
+	var block Block
+
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err := decoder.Decode(&block)  //&:取地址符
+	return block, err
+}
 
 /**
  *生成创世区块的函数
