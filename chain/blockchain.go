@@ -39,7 +39,6 @@ func (chain *BlockChain) CreateGenesis(data []byte) error {
 				return err
 				//panic("操作区块存储文件失败，请重试")
 			}
-			return err
 		}
 
 		//先查看
@@ -94,6 +93,8 @@ func (chain *BlockChain) CreateNewBlock(data []byte) error {
 		bucket.Put(newBlock.Hash[:], newBlockSerBytes)
 		//更新到最新区块的标记lashhash，更新为最新区块的hash
 		bucket.Put([]byte(LASTHASH), newBlock.Hash[:])
+		//更新内存中的nlockchain的LastBlock
+		chain.LastBlock = newBlock
 		return nil
 	})
 	return err
@@ -117,14 +118,10 @@ func (chain *BlockChain) GetAllBlocks() ([]Block, error) {
 			bucket := tx.Bucket([]byte(BLOCKS))
 			if bucket == nil {
 				err = errors.New("数据库操作失败，请重试4！")
-			return err
+				return err
 			}
 			var currentHash []byte
 			currentHash = bucket.Get([]byte(LASTHASH))
-
-			if err != nil {
-				return err
-			}
 			//2.根据最后一个区块依次往前找
 			for {
 				currentBlockBytes := bucket.Get(currentHash)
