@@ -3,27 +3,31 @@ package main
 import (
 	"AnderChain/chain"
 	"fmt"
+	"github.com/boltdb/bolt"
 )
+const BLOCKS = "Ander.db"
+
 func main() {
-	blockChain := chain.CreateChainWithGenesis([]byte("helloworld"))
-	blockChain.CreateNewBlock([]byte("hello"))
-	//fmt.Println("区块链的长度",len(blockChain.Blocks))
 
-	fmt.Println("区块0：", blockChain.Blocks[0])
-	//fmt.Println("区块1的哈希值：", blockChain.Blocks[1])
-
-	firstBlock := blockChain.Blocks[0]
-	firstBytes, err := firstBlock.Serialize()
+	//打开数据库文件
+	db, err := bolt.Open(BLOCKS, 0600, nil)
 	if err != nil {
 		panic(err.Error())
 	}
-	//直接调用反序列化验证逆过程
-	deFirstBlock, err := chain.Deserialize(firstBytes)
+	defer db.Close() //xxx.db.lock
+
+	blockChain := chain.CreateChain(db)
+	//创世区块
+	err = blockChain.CreateGenesis([]byte("helloworld"))
 	if err != nil {
-		panic(err.Error())
+		fmt.Println(err.Error())
+		return
 	}
-	fmt.Println(string(deFirstBlock.Data))
-
-
+	//新增一个区块
+	err = blockChain.CreateNewBlock([]byte("hello"))
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 }
