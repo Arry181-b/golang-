@@ -16,6 +16,7 @@ type BlockChain struct {
 	//Blocks []Block
 	DB        *bolt.DB
 	LastBlock Block //最新最后的区块
+	IteratorBlockHash [32]byte //表示当前迭代到了哪个区块，该变量用于记录迭代到的区块hash
 }
 
 func CreateChain(db *bolt.DB)BlockChain{
@@ -54,12 +55,14 @@ func (chain *BlockChain) CreateGenesis(data []byte) error {
 		bucket.Put([]byte(LASTHASH),genesis.Hash[:])
 			//把genesis赋值给chain的lastblock
 			chain.LastBlock = genesis
+			chain.IteratorBlockHash = genesis.Hash
 		}else {
 			//从文件中，读取出最新的区块，并赋值给内存中的LastBlock
 			lastHash := bucket.Get([]byte(LASTHASH))
 			lastBlockBytes := bucket.Get(lastHash)
 			//把反序列化的最后最新的区块赋值给chain.LastBlock
 			chain.LastBlock, err = Deserialize(lastBlockBytes)
+			chain.IteratorBlockHash = chain.LastBlock.Hash
 		}
 		return nil
 	})
@@ -95,6 +98,7 @@ func (chain *BlockChain) CreateNewBlock(data []byte) error {
 		bucket.Put([]byte(LASTHASH), newBlock.Hash[:])
 		//更新内存中的nlockchain的LastBlock
 		chain.LastBlock = newBlock
+		chain.IteratorBlockHash = newBlock.Hash
 		return nil
 	})
 	return err
@@ -142,6 +146,56 @@ func (chain *BlockChain) GetAllBlocks() ([]Block, error) {
 		})
 		return blocks, err
 
+}
+
+/**
+ *该方法用于实现迭代器Iterator的HasNext方法，用于判读是否还有数据
+ *如果有数据，返回true,否则返回false
+ */
+func (chain *BlockChain) HasNext() bool {
+	//区块0 -> 区块1 -> 区块2
+	//最新区块：区块2
+	//步骤：当前区块在哪 -> prevHash -> db
+	db := chain.DB
+	var hasNext bool
+	db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(BLOCKS))
+		if bucket == nil {
+			return errors.New("数据库操作失败，请重试5")
+		}
+		//获取前一个区块的区块数据
+		preBlockBytes := bucket.Get(chain.IteratorBlockHash[:])
+		//如果获取不到前一个区块的数据，说明后面没有区块了
+		hasNext = len(preBlockBytes) != 0
+		return nil
+	})
+	return hasNext
+}
+
+/**
+  * 该方法用于实现迭代器Iterator的HasNext方法，用于取出一个数据
+  * 此处，因为是区块链数据集合，因此返回的数据类型是Block
+ */
+func (chain *BlockChain) Next() Block {
+	//1.知道当前在哪个区块
+	//2.找当前区块的前一个区块
+	//3.找到的区块返回
+	db := chain.DB
+	var iteratorBlock Block
+	db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(BLOCKS))
+		if bucket == nil {
+			return errors.New("数据库操作失败，请重试6")
+		}
+		//前一个区块的数据
+
+		blockBytes := bucket.Get(chain.IteratorBlockHash[:])
+		iteratorBlock, _ = Deserialize(blockBytes)
+		//迭代到当前区块后，更新游标的区块内容
+		chain.IteratorBlockHash = iteratorBlock.PrevHash
+		return nil
+	})
+	return iteratorBlock
 }
 
 

@@ -31,20 +31,29 @@ func main() {
 	}
 
 	//测试
-	lastBlock := blockChain.GetLastBlock()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("最新区块是：", lastBlock)
+	//lastBlock := blockChain.GetLastBlock()
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
+	//fmt.Println("最新区块是：", lastBlock)
+	//
+	//blocks, err := blockChain.GetAllBlocks()
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//	return
+	//}
+	//for index,block := range blocks {
+	//	fmt.Printf("第%d个区块：",index)
+	//	fmt.Println(block)
+	//}
 
-	blocks, err := blockChain.GetAllBlocks()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	for index,block := range blocks {
-		fmt.Printf("第%d个区块：",index)
-		fmt.Println(block)
+	//迭代器功能
+	for blockChain.HasNext() {
+		block := blockChain.Next()
+		fmt.Printf("迭代到第%d个区块，区块高度：",block.Height)
+		fmt.Printf("区块hash:%v",block.Hash)
+		fmt.Printf("区块的信息：%s", string(block.Data))
+		fmt.Println()
 	}
 }
